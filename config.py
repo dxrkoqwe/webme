@@ -47,6 +47,23 @@ DEFAULT_WEBM_KEYWORDS = [
     "прикол",
 ]
 
+DEFAULT_WEBM_EXCLUDE = [
+    "speech",
+    "speaks",
+    "talk",
+    "interview",
+    "lecture",
+    "news",
+    "conference",
+    "meeting",
+    "announcement",
+    "government",
+    "president",
+    "politician",
+    "documentary",
+    "report",
+]
+
 DEFAULT_CONTENT_MIX = {"cat": 30, "funny": 40, "webm": 30}
 
 
@@ -175,6 +192,7 @@ class Config:
     content_mix: dict[str, int] = field(default_factory=lambda: dict(DEFAULT_CONTENT_MIX))
     commons_enabled: bool = True
     webm_keywords: list[str] = field(default_factory=lambda: list(DEFAULT_WEBM_KEYWORDS))
+    webm_exclude: list[str] = field(default_factory=lambda: list(DEFAULT_WEBM_EXCLUDE))
     max_webm_duration_sec: int = 120
     post_interval_min: int = 180
     jitter_percent: float = 20.0
@@ -248,6 +266,13 @@ def load_config(env_path: Path | None = None) -> Config:
         else list(DEFAULT_WEBM_KEYWORDS)
     )
 
+    exclude_raw = os.getenv("WEBM_EXCLUDE", "").strip()
+    webm_exclude = (
+        [word.strip().lower() for word in exclude_raw.split("|") if word.strip()]
+        if exclude_raw
+        else list(DEFAULT_WEBM_EXCLUDE)
+    )
+
     admin_raw = os.getenv("TELEGRAM_ADMIN_ID", "").strip()
     admin_id: int | None = None
     if admin_raw:
@@ -271,6 +296,7 @@ def load_config(env_path: Path | None = None) -> Config:
         content_mix=parse_content_mix(os.getenv("CONTENT_MIX")),
         commons_enabled=_get_bool("ENABLE_COMMONS_WEBM", True),
         webm_keywords=webm_keywords,
+        webm_exclude=webm_exclude,
         max_webm_duration_sec=_get_int("MAX_WEBM_DURATION_SEC", 120),
         post_interval_min=_get_int("POST_INTERVAL_MIN", 180),
         jitter_percent=_get_float("JITTER_PERCENT", 20.0),

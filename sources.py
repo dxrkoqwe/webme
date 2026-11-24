@@ -383,6 +383,8 @@ class SourceManager:
             description = _strip_html((meta.get("ImageDescription") or {}).get("value"))
             categories = _strip_html((meta.get("Categories") or {}).get("value"))
             haystack = f"{title} {description} {categories}".lower()
+            if any(word in haystack for word in self.cfg.webm_exclude):
+                continue
             if self.cfg.webm_keywords and not any(word in haystack for word in self.cfg.webm_keywords):
                 continue
 
