@@ -22,7 +22,7 @@ jobs:
       TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
       CONTENT_MIX: cat:0,funny:0,webm:100
       ENABLE_COMMONS_WEBM: 1
-      WEBM_QUERIES: funny cat|funny animals|funny kitten|cat playing|funny animation
+      WEBM_QUERIES: 'incategory:"Videos of cats" playing|incategory:"Videos of cats" kitten|incategory:"Videos of cats" funny|incategory:"Internet memes"|incategory:"Cats in sinks"'
       MAX_WEBM_DURATION_SEC: 120
       TZ_NAME: Europe/Moscow
       ACTIVE_HOURS: 07-23
