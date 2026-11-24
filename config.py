@@ -248,8 +248,9 @@ class Config:
     webm_russian_queries: list[str] = field(default_factory=lambda: list(DEFAULT_WEBM_RUSSIAN_QUERIES))
     webm_russian_prefer: bool = True
     webm_67_queries: list[str] = field(default_factory=lambda: list(DEFAULT_WEBM_67_QUERIES))
-    webm_67_prefer: bool = True
-    webm_67_only: bool = True
+    webm_67_exclude: bool = True
+    webm_67_prefer: bool = False
+    webm_67_only: bool = False
     webm_max_age_days: int = 365
     manual_memes_file: Path = field(default_factory=lambda: Path("data/manual_memes.txt"))
     content_mix: dict[str, int] = field(default_factory=lambda: dict(DEFAULT_CONTENT_MIX))
@@ -381,8 +382,9 @@ def load_config(env_path: Path | None = None) -> Config:
         webm_russian_queries=webm_russian_queries,
         webm_russian_prefer=_get_bool("WEBM_RUSSIAN_PREFER", True),
         webm_67_queries=webm_67_queries,
-        webm_67_prefer=_get_bool("WEBM_67_PREFER", True),
-        webm_67_only=_get_bool("WEBM_67_ONLY", True),
+        webm_67_exclude=_get_bool("WEBM_67_EXCLUDE", True),
+        webm_67_prefer=_get_bool("WEBM_67_PREFER", False),
+        webm_67_only=_get_bool("WEBM_67_ONLY", False),
         webm_max_age_days=_get_int("WEBM_MAX_AGE_DAYS", 365),
         manual_memes_file=Path(os.getenv("MANUAL_MEMES_FILE", "data/manual_memes.txt")).expanduser(),
         content_mix=parse_content_mix(os.getenv("CONTENT_MIX")),

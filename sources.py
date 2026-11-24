@@ -93,6 +93,9 @@ def webm_is_relevant(cfg: Config, haystack: str, date_text: str = "") -> bool:
         return False
     if _is_too_old(cfg, date_text):
         return False
+    # Мемы «67» пользователь попросил полностью исключить.
+    if cfg.webm_67_exclude and SIXTY_SEVEN_RE.search(text):
+        return False
     if any(word in text for word in cfg.webm_exclude):
         return False
     if cfg.webm_require_words and not any(word in text for word in cfg.webm_require_words):
@@ -208,6 +211,11 @@ class SourceManager:
         manual = parse_manual_memes(self.cfg.manual_memes_file)
         if manual:
             random.shuffle(manual)
+            if self.cfg.webm_67_exclude:
+                before = len(manual)
+                manual = [item for item in manual if not is_67_meme(item)]
+                if len(manual) != before:
+                    self.log.info("Исключено 67-мемов из ручной подборки: %s", before - len(manual))
             if self.cfg.webm_67_prefer:
                 manual = prefer_67_items(manual)
             self.log.info("Ручная подборка: %s ссылок", len(manual))
@@ -249,7 +257,12 @@ class SourceManager:
         if topic == "webm" and self.cfg.webm_russian_prefer and self.cfg.webm_russian_queries:
             russian_query = random.choice(self.cfg.webm_russian_queries)
             queries = [russian_query] + [q for q in queries if q != russian_query]
-        if topic == "webm" and self.cfg.webm_67_prefer and self.cfg.webm_67_queries:
+        if (
+            topic == "webm"
+            and not self.cfg.webm_67_exclude
+            and self.cfg.webm_67_prefer
+            and self.cfg.webm_67_queries
+        ):
             sixty_query = random.choice(self.cfg.webm_67_queries)
             queries = [sixty_query] + [q for q in queries if q != sixty_query]
         return providers, queries[:3]
@@ -284,6 +297,8 @@ class SourceManager:
             if len(merged) >= limit:
                 break
         if topic == "webm":
+            if self.cfg.webm_67_exclude:
+                merged = [item for item in merged if not is_67_meme(item)]
             if self.cfg.webm_67_only:
                 sixty_seven = [item for item in merged if is_67_meme(item)]
                 if sixty_seven:
