@@ -1,0 +1,56 @@
+name: KotoPotok — один пост
+
+on:
+  schedule:
+    # Время UTC. 04,07,10,13,16,19 UTC = 07,10,13,16,19,22 МСК.
+    - cron: '0 4,7,10,13,16,19 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kotopotok-post
+  cancel-in-progress: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+      CONTENT_MIX: cat:0,funny:0,webm:100
+      ENABLE_COMMONS_WEBM: 1
+      WEBM_QUERIES: funny video|funny animals|funny cat
+      MAX_WEBM_DURATION_SEC: 120
+      TZ_NAME: Europe/Moscow
+      ACTIVE_HOURS: 07-23
+      FIRST_POST_DELAY_SEC: 1
+      LOG_LEVEL: INFO
+      DATA_DIR: data
+      KOTOPOTOK_ENV: nonexistent.env
+
+    steps:
+      - name: Получить код
+        uses: actions/checkout@v4
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Опубликовать один пост
+        run: python -m app --once
+
+      - name: Сохранить базу опубликованных постов
+        run: |
+          git config user.name "kotopotok-bot"
+          git config user.email "kotopotok-bot@users.noreply.github.com"
+          git add -f data/bot.db
+          if git diff --cached --quiet; then
+            echo "База не изменилась — коммит не нужен"
+          else
+            git commit -m "chore: update posted media database"
+            git push
+          fi
