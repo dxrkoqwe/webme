@@ -9,6 +9,7 @@
 - публикует смешные моменты с людьми и видео/фото котов из **Pexels** и **Pixabay** (бесплатные ключи);
 - публикует вебмы из **Wikimedia Commons** без ключа и с соблюдением лицензии/авторства;
 - ставит свежие мемы из `data/manual_memes.txt` первыми и отсекает старые ролики;
+- ищет мемы «67» и, если они найдены, публикует только их;
 - смешивает три типа контента по весам: коты / смешное / вебмы — меняется командой `/mix`;
 - не повторяет уже опубликованное — база `data/bot.db`;
 - случайный интервал, чтобы посты не выглядели роботизированно;
@@ -87,6 +88,9 @@ FUNNY_QUERIES=funny moments|people laughing|funny dance|sports fail|kids playing
 WEBM_QUERIES=funny video|funny cat|funny animals|funny animation|funny moments
 WEBM_KEYWORDS=funny|cat|cats|kitten|fail|lol|comedy|meme|кот|коты|смешн|весел|прикол
 WEBM_MAX_AGE_DAYS=365
+WEBM_67_QUERIES=incategory:"Internet memes" 67|67 meme|"6 7" meme
+WEBM_67_PREFER=1
+WEBM_67_ONLY=1
 MANUAL_MEMES_FILE=data/manual_memes.txt
 MAX_WEBM_DURATION_SEC=120
 ```
@@ -98,6 +102,7 @@ MAX_WEBM_DURATION_SEC=120
 - `FUNNY_QUERIES` — поисковые фразы для смешных роликов с людьми/ситуациями.
 - `WEBM_KEYWORDS` — грубый фильтр релевантности, чтобы поиск не присылал случайные архивные ролики.
 - `WEBM_MAX_AGE_DAYS` — ролики старше этого возраста не публикуются; `0` отключает проверку.
+- `WEBM_67_QUERIES` / `WEBM_67_PREFER` / `WEBM_67_ONLY` — поиск и приоритет мемов «67». `WEBM_67_ONLY=1` означает: если 67-мемы найдены, публикуются только они; иначе используется запасной контент.
 - `MANUAL_MEMES_FILE` — файл со свежими мемами в формате `ссылка | название | автор`. Так можно добавить новый виральный ролик, которого ещё нет в Commons. Нужна прямая ссылка на `.mp4`/`.webm` и право на перепубликацию.
 - `MAX_WEBM_DURATION_SEC` отсекает длинные ролики: бот берёт короткие виральные фрагменты.
 

@@ -18,6 +18,7 @@ from net import request_json
 
 CYRILLIC_RE = re.compile(r"[А-Яа-яЁё]")
 COMMONS_DATE_RE = re.compile(r"(\d{4}-\d{2}-\d{2})")
+SIXTY_SEVEN_RE = re.compile(r"(?<!\d)(?:67|6\s*[-–—]?\s*7)(?!\d)")
 
 MOCK_PNG_BASE64 = (
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII="
@@ -146,6 +147,22 @@ def prefer_russian_items(items: list[MediaItem]) -> list[MediaItem]:
     return russian + other
 
 
+def is_67_meme(item: MediaItem) -> bool:
+    """Поймать мемы «67» / «6 7» / «6-7», но не случайные числа вроде 1567."""
+    return bool(SIXTY_SEVEN_RE.search(item.title.lower()))
+
+
+def prefer_67_items(items: list[MediaItem]) -> list[MediaItem]:
+    """Мемы 67 идут первыми, остальные остаются запасным вариантом."""
+    sixty_seven = [item for item in items if is_67_meme(item)]
+    if not sixty_seven:
+        return items
+    other = [item for item in items if not is_67_meme(item)]
+    random.shuffle(sixty_seven)
+    random.shuffle(other)
+    return sixty_seven + other
+
+
 class SourceManager:
     def __init__(self, cfg: Config, log: logging.Logger):
         self.cfg = cfg
@@ -191,6 +208,8 @@ class SourceManager:
         manual = parse_manual_memes(self.cfg.manual_memes_file)
         if manual:
             random.shuffle(manual)
+            if self.cfg.webm_67_prefer:
+                manual = prefer_67_items(manual)
             self.log.info("Ручная подборка: %s ссылок", len(manual))
         attempts = [topic] + [name for name in ("cat", "funny", "webm") if name != topic]
         errors: list[str] = []
@@ -230,6 +249,9 @@ class SourceManager:
         if topic == "webm" and self.cfg.webm_russian_prefer and self.cfg.webm_russian_queries:
             russian_query = random.choice(self.cfg.webm_russian_queries)
             queries = [russian_query] + [q for q in queries if q != russian_query]
+        if topic == "webm" and self.cfg.webm_67_prefer and self.cfg.webm_67_queries:
+            sixty_query = random.choice(self.cfg.webm_67_queries)
+            queries = [sixty_query] + [q for q in queries if q != sixty_query]
         return providers, queries[:3]
 
     async def _collect(
@@ -261,8 +283,15 @@ class SourceManager:
                     break
             if len(merged) >= limit:
                 break
-        if topic == "webm" and self.cfg.webm_russian_prefer:
-            merged = prefer_russian_items(merged)
+        if topic == "webm":
+            if self.cfg.webm_67_only:
+                sixty_seven = [item for item in merged if is_67_meme(item)]
+                if sixty_seven:
+                    merged = sixty_seven
+            if self.cfg.webm_russian_prefer:
+                merged = prefer_russian_items(merged)
+            if self.cfg.webm_67_prefer:
+                merged = prefer_67_items(merged)
         else:
             random.shuffle(merged)
         return merged[:limit], errors
