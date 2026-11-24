@@ -22,7 +22,7 @@ jobs:
       TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
       CONTENT_MIX: cat:0,funny:0,webm:100
       ENABLE_COMMONS_WEBM: 1
-      WEBM_QUERIES: funny video|funny animals|funny cat
+      WEBM_QUERIES: funny cat|funny animals|funny kitten|cat playing|funny animation
       MAX_WEBM_DURATION_SEC: 120
       TZ_NAME: Europe/Moscow
       ACTIVE_HOURS: 07-23
@@ -40,11 +40,22 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Проверить ffmpeg
+        run: |
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+          fi
+          ffmpeg -version | head -1
+
       - name: Опубликовать один пост
         run: python -m app --once
 
       - name: Сохранить базу опубликованных постов
         run: |
+          if [ ! -f data/bot.db ]; then
+            echo "База не создана — публикация не состоялась, пропускаю"
+            exit 0
+          fi
           git config user.name "kotopotok-bot"
           git config user.email "kotopotok-bot@users.noreply.github.com"
           git add -f data/bot.db
