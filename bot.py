@@ -356,14 +356,28 @@ class ContentBot:
             self.storage.set_state("next_post", time.time() + 600)
             return False
 
-        item = fresh[0]
-        content = await prepare_media(item, self.cfg, self.log)
-        post_number = int(self.storage.stats()["total"]) + 1
-        caption = build_caption(item, self.cfg, post_number)
-        await self.telegram.send_media(item, content, caption)
-        self.storage.mark_posted(item, caption)
-        self.log.info("Опубликовано: %s (%s, %s)", item.display_title, item.source, item.extension)
-        return True
+        attempts = fresh[:5]
+        last_error: Exception | None = None
+        for index, item in enumerate(attempts):
+            try:
+                content = await prepare_media(item, self.cfg, self.log)
+                post_number = int(self.storage.stats()["total"]) + 1
+                caption = build_caption(item, self.cfg, post_number)
+                await self.telegram.send_media(item, content, caption)
+                self.storage.mark_posted(item, caption)
+                self.log.info("Опубликовано: %s (%s, %s)", item.display_title, item.source, item.extension)
+                return True
+            except Exception as exc:  # noqa: BLE001 - пробуем следующий ролик
+                last_error = exc
+                self.log.warning(
+                    "Не удалось опубликовать '%s': %s", item.display_title[:60], exc
+                )
+                if index < len(attempts) - 1:
+                    await asyncio.sleep(3)
+
+        if last_error:
+            raise last_error
+        return False
 
     async def _notify_error(self, message: str) -> None:
         if not self.admin_id:

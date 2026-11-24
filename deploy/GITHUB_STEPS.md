@@ -91,4 +91,5 @@ cron: '0 4,7,10,13,16,19 * * *'
 
 - `Не удалось связаться с api.telegram.org` — проверь секреты и доступность GitHub Actions.
 - `Не удалось найти медиа` — Wikimedia временно не отдал ролики; следующий запуск попробует снова.
-- ошибка `git push` — проверь, что в workflow есть `permissions: contents: write`.
+- `HTTP Error 429: Too many requests` — Wikimedia ограничила общий IP GitHub Actions. Код уже умеет повторять запрос с задержкой и пробовать до 5 разных роликов за запуск. Если 429 повторяется несколько раз подряд — просто дождись следующего запланированного запуска, лимит снимет.
+- ошибка `git push` — проверь, что в workflow есть `permissions: contents: write`, и что в Settings → Actions → General → Workflow permissions стоит `Read and write permissions`.
