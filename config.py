@@ -24,11 +24,16 @@ DEFAULT_FUNNY_QUERIES = [
 ]
 
 DEFAULT_WEBM_QUERIES = [
-    "funny video",
-    "funny cat",
-    "funny animals",
-    "funny animation",
-    "funny moments",
+    'incategory:"Videos of cats" playing',
+    'incategory:"Videos of cats" kitten',
+    'incategory:"Videos of cats" funny',
+    'incategory:"Internet memes"',
+    'incategory:"Cats in sinks"',
+]
+
+DEFAULT_WEBM_RUSSIAN_QUERIES = [
+    'incategory:"Unidentified internet memes"',
+    "мем",
 ]
 
 DEFAULT_WEBM_KEYWORDS = [
@@ -51,6 +56,7 @@ DEFAULT_WEBM_EXCLUDE = [
     "speech",
     "speaks",
     "talk",
+    "talking",
     "interview",
     "lecture",
     "news",
@@ -62,6 +68,50 @@ DEFAULT_WEBM_EXCLUDE = [
     "politician",
     "documentary",
     "report",
+    "audience",
+    "auditorium",
+    "watching",
+    "watch",
+    "viewer",
+    "screen",
+    "monitor",
+    "television",
+    "cinema",
+    "theater",
+    "theatre",
+    "crowd",
+    "spectator",
+    "presentation",
+    "classroom",
+    "student",
+]
+
+DEFAULT_WEBM_REQUIRE_WORDS = [
+    "cat",
+    "cats",
+    "kitten",
+    "kitty",
+    "кот",
+    "кош",
+    "котик",
+    "котёнок",
+    "gato",
+    "gata",
+    "katze",
+    "felis",
+    "meme",
+    "memes",
+    "funny",
+    "comedy",
+    "lol",
+    "fail",
+    "prank",
+    "joke",
+    "laugh",
+    "смешн",
+    "прикол",
+    "мем",
+    "виральн",
 ]
 
 DEFAULT_CONTENT_MIX = {"cat": 30, "funny": 40, "webm": 30}
@@ -189,10 +239,15 @@ class Config:
     search_queries: list[str] = field(default_factory=lambda: list(DEFAULT_QUERIES))
     funny_queries: list[str] = field(default_factory=lambda: list(DEFAULT_FUNNY_QUERIES))
     webm_queries: list[str] = field(default_factory=lambda: list(DEFAULT_WEBM_QUERIES))
+    webm_russian_queries: list[str] = field(default_factory=lambda: list(DEFAULT_WEBM_RUSSIAN_QUERIES))
+    webm_russian_prefer: bool = True
+    webm_max_age_days: int = 365
+    manual_memes_file: Path = field(default_factory=lambda: Path("data/manual_memes.txt"))
     content_mix: dict[str, int] = field(default_factory=lambda: dict(DEFAULT_CONTENT_MIX))
     commons_enabled: bool = True
     webm_keywords: list[str] = field(default_factory=lambda: list(DEFAULT_WEBM_KEYWORDS))
     webm_exclude: list[str] = field(default_factory=lambda: list(DEFAULT_WEBM_EXCLUDE))
+    webm_require_words: list[str] = field(default_factory=lambda: list(DEFAULT_WEBM_REQUIRE_WORDS))
     max_webm_duration_sec: int = 120
     post_interval_min: int = 180
     jitter_percent: float = 20.0
@@ -259,6 +314,13 @@ def load_config(env_path: Path | None = None) -> Config:
     webm_raw = os.getenv("WEBM_QUERIES", "").strip()
     webm_queries = [q.strip() for q in webm_raw.split("|") if q.strip()] if webm_raw else list(DEFAULT_WEBM_QUERIES)
 
+    ru_raw = os.getenv("WEBM_RUSSIAN_QUERIES", "").strip()
+    webm_russian_queries = (
+        [q.strip() for q in ru_raw.split("|") if q.strip()]
+        if ru_raw
+        else list(DEFAULT_WEBM_RUSSIAN_QUERIES)
+    )
+
     keywords_raw = os.getenv("WEBM_KEYWORDS", "").strip()
     webm_keywords = (
         [word.strip().lower() for word in keywords_raw.split("|") if word.strip()]
@@ -271,6 +333,13 @@ def load_config(env_path: Path | None = None) -> Config:
         [word.strip().lower() for word in exclude_raw.split("|") if word.strip()]
         if exclude_raw
         else list(DEFAULT_WEBM_EXCLUDE)
+    )
+
+    require_raw = os.getenv("WEBM_REQUIRE_WORDS", "").strip()
+    webm_require_words = (
+        [word.strip().lower() for word in require_raw.split("|") if word.strip()]
+        if require_raw
+        else list(DEFAULT_WEBM_REQUIRE_WORDS)
     )
 
     admin_raw = os.getenv("TELEGRAM_ADMIN_ID", "").strip()
@@ -293,10 +362,15 @@ def load_config(env_path: Path | None = None) -> Config:
         search_queries=queries,
         funny_queries=funny_queries,
         webm_queries=webm_queries,
+        webm_russian_queries=webm_russian_queries,
+        webm_russian_prefer=_get_bool("WEBM_RUSSIAN_PREFER", True),
+        webm_max_age_days=_get_int("WEBM_MAX_AGE_DAYS", 365),
+        manual_memes_file=Path(os.getenv("MANUAL_MEMES_FILE", "data/manual_memes.txt")).expanduser(),
         content_mix=parse_content_mix(os.getenv("CONTENT_MIX")),
         commons_enabled=_get_bool("ENABLE_COMMONS_WEBM", True),
         webm_keywords=webm_keywords,
         webm_exclude=webm_exclude,
+        webm_require_words=webm_require_words,
         max_webm_duration_sec=_get_int("MAX_WEBM_DURATION_SEC", 120),
         post_interval_min=_get_int("POST_INTERVAL_MIN", 180),
         jitter_percent=_get_float("JITTER_PERCENT", 20.0),

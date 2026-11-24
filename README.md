@@ -8,6 +8,7 @@
 
 - публикует смешные моменты с людьми и видео/фото котов из **Pexels** и **Pixabay** (бесплатные ключи);
 - публикует вебмы из **Wikimedia Commons** без ключа и с соблюдением лицензии/авторства;
+- ставит свежие мемы из `data/manual_memes.txt` первыми и отсекает старые ролики;
 - смешивает три типа контента по весам: коты / смешное / вебмы — меняется командой `/mix`;
 - не повторяет уже опубликованное — база `data/bot.db`;
 - случайный интервал, чтобы посты не выглядели роботизированно;
@@ -85,6 +86,8 @@ ENABLE_COMMONS_WEBM=1
 FUNNY_QUERIES=funny moments|people laughing|funny dance|sports fail|kids playing
 WEBM_QUERIES=funny video|funny cat|funny animals|funny animation|funny moments
 WEBM_KEYWORDS=funny|cat|cats|kitten|fail|lol|comedy|meme|кот|коты|смешн|весел|прикол
+WEBM_MAX_AGE_DAYS=365
+MANUAL_MEMES_FILE=data/manual_memes.txt
 MAX_WEBM_DURATION_SEC=120
 ```
 
@@ -94,6 +97,8 @@ MAX_WEBM_DURATION_SEC=120
 - `cat:100,funny:0,webm:0` — только коты, как в первой версии.
 - `FUNNY_QUERIES` — поисковые фразы для смешных роликов с людьми/ситуациями.
 - `WEBM_KEYWORDS` — грубый фильтр релевантности, чтобы поиск не присылал случайные архивные ролики.
+- `WEBM_MAX_AGE_DAYS` — ролики старше этого возраста не публикуются; `0` отключает проверку.
+- `MANUAL_MEMES_FILE` — файл со свежими мемами в формате `ссылка | название | автор`. Так можно добавить новый виральный ролик, которого ещё нет в Commons. Нужна прямая ссылка на `.mp4`/`.webm` и право на перепубликацию.
 - `MAX_WEBM_DURATION_SEC` отсекает длинные ролики: бот берёт короткие виральные фрагменты.
 
 Бот выбирает лёгкую transcode-версию вебма (обычно 480p/360p), чтобы уложиться в лимит Telegram 50 МБ. Если Telegram всё же не примет `.webm` как видео, бот автоматически отправит его документом — пост не пропадёт.
@@ -147,7 +152,7 @@ MAX_WEBM_DURATION_SEC=120
 Коротко:
 
 1. Создай **публичный** репозиторий `kotopotok` на GitHub.
-2. Загрузи туда файлы из `kotopotok_github.zip` (включая папку `.github`).
+2. Загрузи туда файлы из архива (включая папки `.github` и `data` с файлом `manual_memes.txt`).
 3. В Settings → Secrets and variables → Actions добавь `TELEGRAM_BOT_TOKEN` и `TELEGRAM_CHANNEL_ID`.
 4. Вкладка Actions → **Run workflow** — проверить первый пост вручную.
 5. Дальше работает расписание: 07, 10, 13, 16, 19, 22 МСК.
