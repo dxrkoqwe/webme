@@ -66,13 +66,13 @@ class TelegramApi:
             return {"ok": True, "result": {"message_id": self._dry_counter}}
 
         field = "video" if item.kind == "video" else "photo"
-        filename = f"kotopotok{item.extension}"
+        filename = f"video{item.extension}"
         form: dict[str, str] = {
             "chat_id": self.cfg.channel_id,
             "caption": caption,
             "parse_mode": "HTML",
         }
-        if item.kind == "video":
+        if item.kind == "video" and item.extension == ".mp4":
             form["supports_streaming"] = "true"
         try:
             return await self._call(
@@ -81,18 +81,38 @@ class TelegramApi:
                 files={field: (filename, content, item.mime)},
                 request_timeout=180,
             )
-        except HttpError as exc:
-            if item.extension != ".webm" or exc.status != 400:
+        except (HttpError, RuntimeError) as exc:
+            if item.extension != ".webm" or not self._is_bad_request(exc):
                 raise
-            self.log.warning("Telegram не принял webm как видео, отправляю документом: %s", exc)
-            doc_form = dict(form)
-            doc_form.pop("supports_streaming", None)
+            self.log.warning("Telegram не принял webm как видео: %s", exc)
+
+        # Telegram sometimes rejects VP9 WebM in sendVideo but accepts it as an animation.
+        animation_form = dict(form)
+        animation_form.pop("supports_streaming", None)
+        try:
             return await self._call(
-                "sendDocument",
-                form=doc_form,
-                files={"document": (filename, content, item.mime)},
+                "sendAnimation",
+                form=animation_form,
+                files={"animation": (filename, content, item.mime)},
                 request_timeout=180,
             )
+        except (HttpError, RuntimeError) as exc:
+            self.log.warning("sendAnimation тоже не принял webm, отправляю документом: %s", exc)
+
+        doc_form = dict(form)
+        doc_form.pop("supports_streaming", None)
+        return await self._call(
+            "sendDocument",
+            form=doc_form,
+            files={"document": (filename, content, item.mime)},
+            request_timeout=180,
+        )
+
+    @staticmethod
+    def _is_bad_request(exc: Exception) -> bool:
+        if isinstance(exc, HttpError):
+            return exc.status == 400
+        return "400" in str(exc)
 
     async def _call(
         self,
